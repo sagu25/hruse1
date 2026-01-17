@@ -68,3 +68,9 @@ htmlcov/
 *.jpeg
 *.jpg
 *.png
+
+# Claude Code
+.claude/
+
+# Streamlit
+.streamlit/

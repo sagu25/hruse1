@@ -1,26 +1,53 @@
 import os
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 load_dotenv()
 
-# API Configuration
+# LLM Provider Configuration
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq")  # Options: "groq", "gemini"
+
+# Groq API Configuration
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+
+# Gemini API Configuration (fallback)
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+
+# Common Configuration
 TEMPERATURE = float(os.getenv("TEMPERATURE", "0.7"))
 
-# Validate API key
-if not GOOGLE_API_KEY:
-    raise ValueError("GOOGLE_API_KEY not found in environment variables. Please set it in .env file")
-
-# Initialize Gemini LLM
+# Initialize LLM based on provider
 def get_llm(temperature=None):
-    """Get configured Gemini LLM instance"""
-    return ChatGoogleGenerativeAI(
-        model=GEMINI_MODEL,
-        temperature=temperature or TEMPERATURE,
-        google_api_key=GOOGLE_API_KEY
-    )
+    """Get configured LLM instance based on provider"""
+    temp = temperature or TEMPERATURE
+
+    if LLM_PROVIDER == "groq":
+        from langchain_groq import ChatGroq
+
+        if not GROQ_API_KEY:
+            raise ValueError("GROQ_API_KEY not found in environment variables. Please set it in .env file")
+
+        return ChatGroq(
+            model=GROQ_MODEL,
+            temperature=temp,
+            groq_api_key=GROQ_API_KEY
+        )
+
+    elif LLM_PROVIDER == "gemini":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        if not GOOGLE_API_KEY:
+            raise ValueError("GOOGLE_API_KEY not found in environment variables. Please set it in .env file")
+
+        return ChatGoogleGenerativeAI(
+            model=GEMINI_MODEL,
+            temperature=temp,
+            google_api_key=GOOGLE_API_KEY
+        )
+
+    else:
+        raise ValueError(f"Unsupported LLM provider: {LLM_PROVIDER}. Use 'groq' or 'gemini'")
 
 # Agent Configuration
 AGENT_CONFIG = {

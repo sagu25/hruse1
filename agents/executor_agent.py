@@ -60,14 +60,16 @@ class ExecutorAgent:
 
         candidate_id = candidate_data.get("candidate_id", f"CAND-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
 
+        # SQLite compatible upsert syntax
         query = """
             INSERT INTO candidates (candidate_id, name, email, location, resume_attached, status)
             VALUES (:candidate_id, :name, :email, :location, :resume_attached, :status)
-            ON DUPLICATE KEY UPDATE
-                name = :name,
-                email = :email,
-                location = :location,
-                status = :status
+            ON CONFLICT(candidate_id) DO UPDATE SET
+                name = excluded.name,
+                email = excluded.email,
+                location = excluded.location,
+                status = excluded.status,
+                updated_at = CURRENT_TIMESTAMP
         """
 
         try:
