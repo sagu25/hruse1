@@ -1,308 +1,240 @@
 # Recruitment Agent System
 
-A multi-agent recruitment automation system using **LangChain**, **LangGraph**, **Gemini API**, and **SQL** for intelligent candidate processing, compensation calculation, and interview scheduling.
+A multi-agent recruitment automation system using **LangChain**, **LangGraph**, **Groq (Llama 3.3 70B)**, and **SQLite** for intelligent candidate processing, compensation calculation, and interview scheduling.
+
+## Features
+
+- **Multi-Agent Architecture** - 5 specialized AI agents working together
+- **Web UI** - Streamlit-based dashboard for easy interaction
+- **Policy Compliance** - Automated compliance checking against company policies
+- **Compensation Calculator** - Automatic salary computation based on bands
+- **Interview Scheduling** - Smart interview scheduling with email drafts
 
 ## Architecture
 
-This system implements 5 specialized agents working together:
+```
+User Request → Interpreter → Coordinator → Researcher → Executor → Reviewer → Output
+                                ↓
+                          Database + RAG
+```
 
-1. **Interpreter Agent** - Interprets user requests and decomposes tasks
-2. **Coordinator Agent** - Fetches data from SQL database and queries policies via RAG
-3. **Researcher Agent** - Computes compensation and proposes interview schedules
-4. **Executor Agent** - Creates records, schedules interviews, drafts emails
-5. **Reviewer Agent** - Validates outputs and checks compliance
+### The 5 AI Agents
+
+| Agent | Role |
+|-------|------|
+| **Interpreter** | Understands user requests, extracts candidate/job info |
+| **Coordinator** | Fetches salary bands and policies from database |
+| **Researcher** | Computes compensation, proposes interview schedules |
+| **Executor** | Creates database records, drafts emails |
+| **Reviewer** | Validates compliance, checks policy adherence |
 
 ## Tech Stack
 
-- **LangChain + LangGraph** - Agent orchestration
-- **Google Gemini API** - LLM (gemini-1.5-pro)
-- **SQLAlchemy** - Database ORM
-- **ChromaDB** - Vector database for RAG
-- **SQLite/MySQL** - Relational database
+| Component | Technology |
+|-----------|------------|
+| **LLM** | Groq (Llama 3.3 70B) - Fast & Free |
+| **Framework** | LangChain + LangGraph |
+| **Database** | SQLite |
+| **RAG** | Database keyword search |
+| **UI** | Streamlit |
+| **Language** | Python 3.11+ |
 
-## Setup on Company Laptop
+## Quick Start
 
-### Step 1: Get Gemini API Key
-
-1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Create a new API key
-3. Copy the key (keep it secure!)
-
-### Step 2: Install Python Dependencies
+### Step 1: Install Dependencies
 
 ```bash
-# Navigate to project directory
 cd C:\Users\Admin\Desktop\ggd
-
-# Install dependencies
 pip install -r requirements.txt
 ```
 
+### Step 2: Get Groq API Key (Free)
+
+1. Go to [Groq Console](https://console.groq.com/keys)
+2. Sign up and create an API key
+3. Copy the key
+
 ### Step 3: Configure Environment
 
-1. Copy `.env.example` to `.env`:
-   ```bash
-   copy .env.example .env
-   ```
+Create a `.env` file:
 
-2. Edit `.env` and add your Gemini API key:
-   ```
-   GOOGLE_API_KEY=your_actual_gemini_api_key_here
-   ```
+```env
+LLM_PROVIDER=groq
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=llama-3.3-70b-versatile
+DB_TYPE=sqlite
+SQLITE_DB_PATH=recruitment.db
+TEMPERATURE=0.7
+```
 
-3. For company laptop, use SQLite (no MySQL setup needed):
-   ```
-   DB_TYPE=sqlite
-   SQLITE_DB_PATH=recruitment.db
-   ```
+### Step 4: Run the Application
 
-### Step 4: Initialize and Run
-
+**Option A - Web UI (Recommended):**
 ```bash
-# Run example workflow
-python main.py example
+streamlit run app.py
+```
+Open: **http://localhost:8501**
 
-# Or run in interactive mode
-python main.py interactive
+**Option B - Command Line:**
+```bash
+python main.py
 ```
 
 ## Project Structure
 
 ```
 ggd/
-├── config/
-│   ├── settings.py          # Gemini API configuration
-│   └── prompts.py           # Agent prompts
-├── database/
-│   ├── schema.sql           # Database schema
-│   └── db_connection.py     # SQL connection handler
 ├── agents/
-│   ├── interpreter_agent.py
-│   ├── coordinator_agent.py
-│   ├── researcher_agent.py
-│   ├── executor_agent.py
-│   └── reviewer_agent.py
+│   ├── interpreter_agent.py   # Request parsing
+│   ├── coordinator_agent.py   # Data gathering
+│   ├── researcher_agent.py    # Compensation calculation
+│   ├── executor_agent.py      # Record creation
+│   └── reviewer_agent.py      # Compliance validation
+├── config/
+│   ├── settings.py            # LLM & DB configuration
+│   └── prompts.py             # Agent prompts
+├── database/
+│   ├── db_connection.py       # SQLite connection
+│   └── schema_sqlite.sql      # Database schema
 ├── rag/
-│   └── policy_vectorstore.py  # RAG for policy retrieval
+│   └── policy_vectorstore.py  # Policy retrieval
 ├── workflows/
 │   └── recruitment_graph.py   # LangGraph workflow
-├── main.py                    # Entry point
+├── app.py                     # Streamlit UI
+├── main.py                    # CLI entry point
+├── TECHNICAL_GUIDE.md         # Detailed documentation
 └── requirements.txt
 ```
 
-## Database Schema
+## Database Tables
 
-The system uses the following tables:
-
-- **candidates** - Candidate information
-- **jobs** - Job postings
-- **salary_bands** - Compensation bands by level/location
-- **policies** - Company policies (used for RAG)
-- **interview_schedules** - Interview scheduling data
-- **compensation_proposals** - Compensation offers
-- **compliance_logs** - Compliance check results
-- **agent_logs** - Agent execution logs
-
-## How It Works
-
-### Workflow Example
-
-User request:
-```
-"Schedule interview for Raja applying for SOE-1 position in Bangalore"
-```
-
-**Step 1: Interpreter Agent**
-- Parses request
-- Identifies: candidate (Raja), job level (SOE-1), location (Bangalore)
-- Determines required data: salary bands, compensation policies
-
-**Step 2: Coordinator Agent**
-- Queries SQL database for salary bands:
-  - SOE-1 Bangalore: INR 15,00,000 - 18,00,000
-- Retrieves compensation policies via RAG
-- Fetches/creates candidate record
-
-**Step 3: Researcher Agent**
-- Computes compensation within policy ranges
-- Proposes interview schedule with availability windows
-- Verifies candidate suitability
-
-**Step 4: Executor Agent**
-- Creates candidate record in database
-- Schedules interview (inserts into `interview_schedules`)
-- Drafts email invitation
-- Creates compensation proposal record
-
-**Step 5: Reviewer Agent**
-- Validates compensation is within salary band
-- Checks compliance (equal opportunity, no bias)
-- Verifies data integrity
-- Logs compliance checks
-
-### SQL Integration
-
-The system performs queries like:
-
-```sql
--- Fetch salary bands
-SELECT * FROM salary_bands
-WHERE job_level = 'SOE-1' AND location = 'Bangalore';
-
--- Schedule interview
-INSERT INTO interview_schedules
-(candidate_id, interview_type, scheduled_date, recruiter)
-VALUES (?, ?, ?, ?);
-
--- Log compliance
-INSERT INTO compliance_logs
-(candidate_id, check_type, result, details)
-VALUES (?, ?, ?, ?);
-```
-
-### RAG for Policies
-
-Policies are:
-1. Stored in SQL `policies` table
-2. Embedded using Gemini embeddings
-3. Indexed in ChromaDB vector store
-4. Retrieved via semantic search when needed
+| Table | Purpose |
+|-------|---------|
+| `candidates` | Candidate records |
+| `salary_bands` | Compensation ranges by level/location |
+| `policies` | Company policies for RAG |
+| `interview_schedules` | Scheduled interviews |
+| `compensation_proposals` | Salary proposals |
+| `compliance_logs` | Audit trail |
 
 ## Usage Examples
 
-### Example 1: Basic Interview Scheduling
+### Web UI
+1. Run `streamlit run app.py`
+2. Select a template or enter custom request
+3. Click "Process Request"
+4. View results, compliance status, and email draft
 
+### Command Line
 ```python
 from workflows.recruitment_graph import RecruitmentWorkflow
 
 workflow = RecruitmentWorkflow()
 results = workflow.run(
-    "Schedule interview for candidate John for SOE-2 position in Mumbai"
+    "Schedule interview for Raja for SOE-1 position in Bangalore"
 )
+print(results)
 ```
 
-### Example 2: Compensation Calculation
-
-```python
-results = workflow.run(
-    "Calculate compensation for Senior Engineer in Bangalore, "
-    "check against policy COMP-POL-India-2025-v3.2"
-)
-```
-
-### Example 3: Query Database Directly
-
+### Query Database
 ```python
 from database.db_connection import db
 
 # Get all candidates
 candidates = db.fetch_all("SELECT * FROM candidates")
 
-# Get salary band
-salary_band = db.fetch_one(
-    "SELECT * FROM salary_bands WHERE job_level = :level",
-    {"level": "SOE-1"}
-)
+# Get salary bands
+bands = db.fetch_all("SELECT * FROM salary_bands WHERE location = 'Bangalore'")
 ```
 
-### Example 4: Query Policies via RAG
+## Sample Output
 
-```python
-from rag.policy_vectorstore import policy_rag
+```
+CANDIDATE: Raja
+POSITION:  SOE-1 Software Engineer, Bangalore
 
-# Search for compensation policies
-policies = policy_rag.query_policies(
-    "What are the equity eligibility rules?",
-    policy_type="compensation"
-)
+COMPENSATION:
+├── Base Salary:    ₹16,50,000
+├── Equity:         150 stock options
+├── Bonus Target:   ₹2,47,500
+└── Total:          ₹18,97,500
+
+INTERVIEW:
+├── Type:   Technical + Behavioral
+├── Dates:  Jan 20, 22, 24, 2025
+└── Time:   10:00 AM - 5:00 PM IST
+
+COMPLIANCE: ⚠️ NEEDS REVISION
+└── Missing equal opportunity statement in email
 ```
 
-## Security Considerations for Company Laptop
+## Viewing Database
 
-1. **API Key Security**
-   - Never commit `.env` file to git
-   - Store API key securely (company password manager)
-   - Use company-approved API keys if available
+### Option 1: VS Code
+Install "SQLite Viewer" extension, click on `recruitment.db`
 
-2. **Data Privacy**
-   - Don't send sensitive employee data to external APIs
-   - Use anonymized/test data for development
-   - Check company policies on LLM usage
+### Option 2: Command Line
+```bash
+sqlite3 recruitment.db
+.tables
+SELECT * FROM candidates;
+.quit
+```
 
-3. **Network Access**
-   - Ensure company firewall allows access to Gemini API
-   - Use company proxy if required
-   - Check with IT if blocked
+### Option 3: DB Browser
+Download [DB Browser for SQLite](https://sqlitebrowser.org/)
 
-4. **Database**
-   - Use SQLite for local testing (no server needed)
-   - For production, get approval for MySQL/PostgreSQL
-   - Encrypt database file if storing real data
+## Configuration
 
-## Customization
+### Switch to Gemini (if needed)
 
-### Adding New Policies
+```env
+LLM_PROVIDER=gemini
+GOOGLE_API_KEY=your_gemini_key
+GEMINI_MODEL=gemini-2.0-flash
+```
+
+### Add New Policies
 
 ```python
 from database.db_connection import db
-from rag.policy_vectorstore import policy_rag
 
-# Add to database
 db.execute_query(
-    "INSERT INTO policies (policy_id, policy_type, policy_name, policy_content) "
-    "VALUES (:id, :type, :name, :content)",
+    """INSERT INTO policies (policy_id, policy_type, policy_name, policy_content)
+       VALUES (:id, :type, :name, :content)""",
     {
         "id": "POL-NEW-001",
         "type": "benefits",
         "name": "Benefits Policy 2026",
-        "content": "Policy content here..."
+        "content": "Your policy content here..."
     }
 )
-
-# Refresh RAG vectorstore
-policy_rag.refresh_vectorstore()
 ```
 
-### Modifying Agent Behavior
+## Documentation
 
-Edit prompts in `config/prompts.py` to change how agents behave.
-
-### Changing LLM Model
-
-In `config/settings.py`, change:
-```python
-GEMINI_MODEL = "gemini-1.5-flash"  # Faster, cheaper
-# or
-GEMINI_MODEL = "gemini-1.5-pro"    # More capable
-```
+- **[TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md)** - Detailed explanation of agents, RAG, and workflow with examples for managers
 
 ## Troubleshooting
 
-### Error: "GOOGLE_API_KEY not found"
-- Ensure `.env` file exists and contains `GOOGLE_API_KEY=your_key`
+| Error | Solution |
+|-------|----------|
+| `GROQ_API_KEY not found` | Create `.env` file with your API key |
+| `Database locked` | Close other applications using the DB |
+| `Module not found` | Run `pip install -r requirements.txt` |
+| `Port 8501 in use` | Kill existing Streamlit or use `--server.port 8502` |
 
-### Error: Database connection failed
-- Check `DB_TYPE` in `.env` (use `sqlite` for simplicity)
-- Ensure write permissions for database file
+## Security Notes
 
-### Error: ChromaDB initialization failed
-- Delete `vectorstore/` directory and rerun
-- System will recreate it automatically
-
-### LangGraph import errors
-- Ensure `langgraph>=0.0.20` is installed
-- Try: `pip install --upgrade langgraph`
-
-## Next Steps
-
-1. Add more sophisticated candidate matching logic
-2. Integrate with real ATS systems (Greenhouse, Lever, etc.)
-3. Add email sending capability (SMTP integration)
-4. Build web UI using Streamlit or Gradio
-5. Add calendar integration (Google Calendar API)
-6. Implement approval workflows
-7. Add analytics and reporting
+- Never commit `.env` file (contains API keys)
+- Use test/anonymized data for development
+- Check company policies on LLM usage
+- Database file (`recruitment.db`) is auto-gitignored
 
 ## License
 
 Internal use only - Company confidential
+
+---
+
+*Built with LangGraph + Groq + Streamlit*
