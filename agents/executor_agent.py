@@ -58,7 +58,13 @@ class ExecutorAgent:
         """Create or update candidate in database"""
         verification = research_results.get("candidate_verification", {})
 
-        candidate_id = candidate_data.get("candidate_id", f"CAND-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+        # Get candidate name for ID generation
+        candidate_name = verification.get("name", candidate_data.get("name", "Unknown"))
+
+        # Always generate unique ID using name + timestamp
+        import random
+        unique_suffix = datetime.now().strftime('%Y%m%d-%H%M%S') + f"-{random.randint(100,999)}"
+        candidate_id = f"CAND-{candidate_name[:4].upper()}-{unique_suffix}"
 
         # SQLite compatible upsert syntax
         query = """
